@@ -2576,15 +2576,17 @@ class VirtualMachine {
                 "rnd==(((id roundto 5) aa) aa)\n" +
                 ">> == ((head°term) app arg) bind tail°term\n" +
                 "load=='[1] act arg iput '_it ee (head°term) app arg\n" +
-                "save=='[2] act arg iput '_it ee (head°term) app arg\n" +
+                // "save=='[2] act arg iput '_it ee (head°term) app arg\n" +
                 "files=='[3] act id\n" +
                 "loadtext=='[4] act arg iput '_it ee (head°term) app arg\n" +
                 "savetext=='[5] act (arg iput '_self ee (head°term) app arg) iput '_para ee (tail°term) app arg\n" +
                 "fremove=='[6] act arg iput '_it ee (head°term) app arg\n" +
-                "viewurl=='[7] act arg iput '_it ee (head°term) app arg\n" +
+                // "viewurl=='[7] act arg iput '_it ee (head°term) app arg\n" +
                 "date=='[8] act id\n" +
                 "quit=='[9] act id\n" +
-                "run=='[10] act arg iput '_it ee (head°term) app arg\n" +
+                "run == '[10] act arg iput '_it ee (head°term) app arg\n" +
+                "print=='[11] act arg iput '_it ee (head°term) app arg\n" +
+                "input=='[12] act id\n" +
                 "help==\"quickinfo.bat\" run\n" +
                 "words==identlist join \" \"\n" +
                 "pim==reverse°[2]°(([0]>1)->*(iszero°[0]-[1]*floor°[0]/[1])->(([0]/[1]),[1],([1],[2]),);([0],([1]+1),[2],))°id,2,(),\n" +
@@ -2620,13 +2622,16 @@ fun intro() {
     """.trimIndent())
 }
 
-var idload: Ident = Ident("load",Nil())
-var idsave: Ident = Ident("save",Nil())
+var idload: Ident     = Ident("load",Nil())
+var idsave: Ident     = Ident("save",Nil())
 var idloadtext: Ident = Ident("loadtext",Nil())
 var idsavetext: Ident = Ident("savetext",Nil())
-var idfremove = Ident("fremove",Nil())
-var idviewurl = Ident("viewurl",Nil())
-var idrun: Ident = Ident("run",Nil())
+var idfremove: Ident  = Ident("fremove",Nil())
+var idviewurl: Ident  = Ident("viewurl",Nil())
+var idrun: Ident      = Ident("run",Nil())
+var idprint: Ident  = Ident("print",Nil())
+var idinput: Ident    = Ident("input",Nil())
+const val ctpfpath: String   = "PF-Files"
 const val ctquitprog: String = "exit the REPL."
 
 val vm: VirtualMachine = VirtualMachine()
@@ -2707,16 +2712,15 @@ fun String.runCommand(workingDir: File) {
 fun doAct(a: Act): Any {
     try {
         when (a.num) {
-            /*
-            1.toLong() -> {
+            1.toLong() -> {  // load
                 val rget = vm.get(idload,a.data,vm.xit)
                 val rname = when (rget) {
-                    is Ident  -> rget.pname.substringAfterLast("/")
-                    is String -> rget.substringAfterLast("/")
+                    is Ident  -> lastName(rget.pname)
+                    is String -> lastName(rget)
                     else      -> ""     }
                 if (rname!="") {
-                    val rpath = applicationContext.filesDir
-                    val rdir = File(rpath,"pf")
+                    val rpath = Paths.get("").toAbsolutePath().toString() // applicationContext.filesDir
+                    val rdir = File(rpath,ctpfpath)
                     if (!rdir.exists()) rdir.mkdir()
                     val rfile = File(rdir, rname)
                     if (rfile.exists()) {
@@ -2724,15 +2728,15 @@ fun doAct(a: Act): Any {
                         //vm = VirtualMachine()=>vergisst Daten
                         //itxt = vm.prelude()
                         //otxt = vm.toValue(vm.deflines(vm.splitTo(itxt,"\n")))
-                        val txt = vm.toValue(vm.deflines(vm.splitTo(rtxt,"\n")))
-                        runOnUiThread {  et1.setText(rtxt)  }
+                        val txt = vm.toValue(vm.deflines(splitLines(rtxt)))
+                        //println(vm.toValue(splitLines(rtxt)))
+                        //runOnUiThread {  et1.setText(rtxt)  }
                         return vm.run(a.bind,a.data)
                     } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idload,"File not found")))
                 } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idload,"Error in filename")))
             }
-            */
             /*
-            2.toLong() -> {
+            2.toLong() -> {  // save
                 val wget = vm.iget(idsave,a.data,vm.xit)
                 val wname = when (wget) {
                     is Ident  -> wget.pname.substringAfterLast("/")
@@ -2740,7 +2744,7 @@ fun doAct(a: Act): Any {
                     else      -> ""     }
                 if (wname!="") {
                     val wpath = applicationContext.filesDir
-                    val wdir = File(wpath,"pf")
+                    val wdir = File(wpath,ctpfpath)
                     if (!wdir.exists()) wdir.mkdir()
                     val wfile = File(wdir,wname)
                     val wtxt = et1.text.toString()
@@ -2749,9 +2753,9 @@ fun doAct(a: Act): Any {
                 } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idsave,"Error in filename")))
             }
             */
-            3.toLong() -> {
+            3.toLong() -> {  // files
                 val fpath = Paths.get("").toAbsolutePath().toString() // applicationContext.filesDir
-                val fdir = File(fpath,"pf")
+                val fdir = File(fpath,ctpfpath)
                 if (!fdir.exists()) fdir.mkdir()
                 val flist = fdir.listFiles()
                 var f: Any = Nil()
@@ -2759,7 +2763,7 @@ fun doAct(a: Act): Any {
                     f = Cell(lastName(it.toString()),vm.xcons,f)  }
                 return vm.run(a.bind,vm.iput(a.data,vm.xit,vm.nreverse(f)))
             }
-            4.toLong() -> {
+            4.toLong() -> {  // loadtext
                 val rget = vm.iget(idloadtext,a.data,vm.xit)
                 val rname = when (rget) {
                     is Ident  -> lastName(rget.pname)
@@ -2767,7 +2771,7 @@ fun doAct(a: Act): Any {
                     else      -> ""     }
                 if (rname!="") {
                     val rpath = Paths.get("").toAbsolutePath().toString() // applicationContext.filesDir
-                    val rdir = File(rpath,"pf")
+                    val rdir = File(rpath,ctpfpath)
                     if (!rdir.exists()) rdir.mkdir()
                     val rfile = File(rdir, rname)
                     if (rfile.exists()) {
@@ -2776,7 +2780,7 @@ fun doAct(a: Act): Any {
                     } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idloadtext,"File not found")))
                 } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idloadtext,"Error in filename")))
             }
-            5.toLong() -> {
+            5.toLong() -> {  // savetext
                 val wself = vm.iget(idsavetext,a.data,vm.xself)
                 val wpara = vm.iget(idsavetext,a.data,vm.xpara)
                 if (wpara !is String)
@@ -2787,14 +2791,14 @@ fun doAct(a: Act): Any {
                     else      -> ""      }
                 if (wname!="") {
                     val wpath = Paths.get("").toAbsolutePath().toString() // applicationContext.filesDir
-                    val wdir = File(wpath,"pf")
+                    val wdir = File(wpath,ctpfpath)
                     if (!wdir.exists()) wdir.mkdir()
                     val wfile = File(wdir,wname)
                     wfile.writeText(wpara)
                     return vm.run(a.bind,vm.iput(a.data,vm.xit,wname))
                 } else return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idsavetext,"Error in filename")))
             }
-            6.toLong() -> {
+            6.toLong() -> {  // fremove
                 val fnm = vm.iget(idfremove,a.data,vm.xit)
                 val rname = when (fnm) {
                     is Ident  -> lastName(fnm.pname)
@@ -2802,7 +2806,7 @@ fun doAct(a: Act): Any {
                     else      -> ""     }
                 if (rname=="") return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idfremove,"Error in filename")))
                 val rpath = Paths.get("").toAbsolutePath().toString() // applicationContext.filesDir
-                val rdir = File(rpath,"pf")
+                val rdir = File(rpath,ctpfpath)
                 if (!rdir.exists()) rdir.mkdir()
                 val rfile = File(rdir, rname)
                 if (rfile.exists() && rfile.isFile) {
@@ -2823,15 +2827,15 @@ fun doAct(a: Act): Any {
                 return vm.run(a.bind,a.data)
             }
             */
-            8.toLong() -> {
+            8.toLong() -> {  // date
                 val d = Date().toString()
                 return vm.run(a.bind,vm.iput(a.data,vm.xit,d))
             }
-            9.toLong() -> {
+            9.toLong() -> {  // quit
                 pfquit = true
                 return vm.run(a.bind,vm.iput(a.data,vm.xit,ctquitprog))
             }
-            10.toLong() -> {
+            10.toLong() -> {  // run
                 val rget = vm.iget(idrun,a.data,vm.xit)
                 if (rget !is String)
                     return vm.run(a.bind,vm.iput(a.data,vm.xit,Error(idrun,"String expected")))
@@ -2840,8 +2844,22 @@ fun doAct(a: Act): Any {
                     return vm.run(a.bind,vm.iput(a.data,vm.xit,rget))
                 }
             }
-            is Act     -> {  return "Test:Act"}
-            else       -> {  return "Test:else"}
+            11.toLong() -> {  // print
+                val i: Any = vm.iget(idprint,a.data,vm.xit)
+                when (i) {
+                    is Cell   -> println(vm.toTable(i))
+                    is String -> println(i)
+                    is Nil    -> println("( )")
+                    else      -> println(vm.toValue(i))
+                }
+                return vm.run(a.bind,vm.iput(a.data,vm.xit,i))  // i hier ???
+            }
+            12.toLong() -> {  // input
+                val str: String = readln().toString()
+                return vm.run(a.bind,vm.iput(a.data,vm.xit,str))
+            }
+            is Act     -> {  return "Test:Act (error, provisorium)"}
+            else       -> {  return "Test:else (error, no number to react)"}
         }
     } catch (e: Exception) {  return Error(vm.idipr,e.message as String)  }
 }

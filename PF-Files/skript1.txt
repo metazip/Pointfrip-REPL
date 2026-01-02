@@ -1,0 +1,5 @@
+hallo=="Hallo Welt." print
+fact==(* \)°1,iota
+liste==(a;b;c;d;e;f;g;)
+fact°7
+nums==10,20,30,40,50,
